@@ -1,0 +1,195 @@
+<html>
+
+<head>
+    <title>Aliens!</title>
+    <!-- <script src="script.js"></script> -->
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <div class="topBar">Score: <span class="score">0</span></div>
+    <div class="mainContainer">
+        <div class="startButton">Start Game</div>
+        <div class="playerShip"></div>
+        <div class="pewPew hide"></div>
+    </div>
+
+    <script>
+        const startButton = document.querySelector(".startButton")
+        const playerShip = document.querySelector(".playerShip")
+        const container = document.querySelector(".mainContainer")
+        const pewPew = document.querySelector(".pewPew")
+        const scoreOutput = document.querySelector(".score")
+        const containerDimension = container.getBoundingClientRect()
+
+        startButton.addEventListener("click", startGame)
+
+        // Global object
+        let player = {
+            score: 0,
+            speed: 5,
+            gameOver: true,
+            fire: false,
+            alienSpeed: 5
+        }
+        let keyValue = {}
+
+        // Event lister for keydown
+        document.addEventListener("keydown", function (k) {
+            // Get the key that was pressed
+            // Left is 37
+            // Right is 39
+            // Space is 32 and up is 38 for pew-pew
+            let key = k.keyCode
+            if (key === 37) {
+                keyValue.left = true
+            } else if (key === 39) {
+                keyValue.right = true
+            } else if (key === 38 || key === 32) {
+                if ( !player.fire ) {
+                    bangBang()
+                }
+            }
+            console.log(keyValue)
+        })
+
+        // Event lister for keyup
+        document.addEventListener("keyup", function (k) {
+            let key = k.keyCode
+            if (key === 37) {
+                keyValue.left = false
+            } else if (key === 39) {
+                keyValue.right = false
+            }
+            console.log(keyValue)
+        })
+
+        // Game Over
+        function gameOver() {
+            startButton.style.display = "block"
+            startButton.innerHTML = "Restart New Game"
+        }
+
+        function clearAliens() {
+            let tempAliens = document.querySelectorAll(".alien")
+            for (let x = 0; x < tempAliens.length; x++) {
+                tempAliens[x].parentNode.removeChild(tempAliens[x])
+            }
+        }
+
+        function startGame () {
+            if (player.gameOver) {
+                clearAliens()
+                player.gameOver = false
+                startButton.style.display = "none"
+                
+                // Alien Speed
+                player.alienSpeed = 5
+
+                // Number of Aliens
+                setupAliens(5)
+
+                console.log("Start game!")
+
+                // Calling and invoking function update as an animation frame
+                player.animationFrame = requestAnimationFrame(update)
+            }
+        }
+
+        // Double check Y position
+        function setupAliens(num) {
+            let tempWidth = 70;
+            let lastCol = containerDimension.width - tempWidth;
+            let row = {
+                x: containerDimension.left + 50, 
+                y: 50
+            }
+            for (let x = 0; x < num; x++) {
+                if (row.x > (lastCol - tempWidth)) {
+                    row.y += 70;
+                    row.x = containerDimension.left + 50
+                }
+                alienMaker(row, tempWidth);
+                row.x += tempWidth + 20;
+            }
+        }
+
+        function alienMaker ( row, tempWidth ) {
+            console.log(row)
+            let div = document.createElement("div")
+            div.classList.add("alien")
+            div.style.width = tempWidth + "px"
+            div.xpos = Math.floor(row.x)
+            div.ypos = Math.floor(row.y)
+            div.style.left = div.xpos + "px"
+            div.style.top = div.ypos + "px"
+            // Zig zag attempt
+            div.directionMove = 1
+            container.appendChild(div)
+
+            console.log(div)
+        }
+
+        // When player wants to go bang-bang the ship goes pew-pew
+        function bangBang () {
+            player.fire = true
+            pewPew.classList.remove("hide")
+            pewPew.xpos = (playerShip.offsetLeft + (playerShip.offsetWidth / 2))
+            pewPew.ypos = playerShip.offsetTop - 10
+            pewPew.style.left = pewPew.xpos + "px"
+            pewPew.style.top = pewPew.ypos + "px"
+        }
+
+        function update () {
+            if (!player.gameOver) {
+            let tempAliens = document.querySelectorAll(".alien");
+            // console.log(tempAliens)
+            for (let x = tempAliens.length - 1; x > -1; x--) {
+                let el = tempAliens[x];
+                if (el.xpos > (containerDimension.width - el.offsetWidth) || el.xpos < containerDimension.left) {
+                    el.directionMove *= -1;
+                    el.ypos += 40;
+
+                    if (el.ypos > (playerShip.offsetTop - 50)) {
+                        console.log("Game Over!")
+                        player.gameOver = true;
+                        gameOver();
+                    }
+                }
+                el.xpos += (player.alienSpeed * el.directionMove);
+                // el.ypos = Math.floor(rox.y)
+                el.style.left = el.xpos + "px";
+                el.style.top = el.ypos + "px";
+            }
+            
+            // Moving the player's ship by changing style vaule with offsetLeft
+            let tempPos = playerShip.offsetLeft;
+
+            // Pew pew action
+            if (player.fire) {
+                if (pewPew.ypos > 0) {
+                    pewPew.ypos -= 15;
+                    pewPew.style.top = pewPew.ypos + "px";
+                }
+                else {
+                    player.fire = false;
+                    pewPew.classList.add("hide");
+                    pewPew.ypos = containerDimension.height + 100;
+                }
+            }
+            if (keyValue.left && tempPos > containerDimension.left) {
+                tempPos -= player.speed;
+            }
+            // Needed to added the ship size because it would fall off the container
+            if (keyValue.right && (tempPos + playerShip.offsetWidth) < containerDimension.right) {
+                tempPos += player.speed;
+            }
+            playerShip.style.left = tempPos + "px";
+            // Starts looping
+            player.animFrame = requestAnimationFrame(update);
+        }
+    }
+    </script>
+</body>
+
+</html>
